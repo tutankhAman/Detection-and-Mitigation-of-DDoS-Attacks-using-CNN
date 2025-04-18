@@ -1,0 +1,79 @@
+from datetime import datetime
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
+
+class MachineLearning():
+    """
+    A class for analyzing network flow data using Support Vector Machine classifier
+    for DDoS attack detection.
+    """
+
+    def __init__(self):
+        """
+        Initialize the MachineLearning class and load the flow statistics dataset.
+        """
+        print("Loading dataset ...")
+        
+        # Load flow statistics dataset
+        self.flow_dataset = pd.read_csv('FlowStatsfile.csv')
+
+        # Clean the dataset by removing dots from IP addresses and flow IDs
+        self.flow_dataset.iloc[:, 2] = self.flow_dataset.iloc[:, 2].str.replace('.', '')
+        self.flow_dataset.iloc[:, 3] = self.flow_dataset.iloc[:, 3].str.replace('.', '')
+        self.flow_dataset.iloc[:, 5] = self.flow_dataset.iloc[:, 5].str.replace('.', '')   
+
+    def flow_training(self):
+        """
+        Train an SVM classifier on flow data and evaluate its performance.
+        Displays confusion matrix and accuracy metrics.
+        """
+        print("Flow Training ...")
+        
+        # Extract features (X) and target labels (y)
+        X_flow = self.flow_dataset.iloc[:, :-1].values
+        X_flow = X_flow.astype('float64')
+        y_flow = self.flow_dataset.iloc[:, -1].values
+
+        # Split data into training and testing sets
+        X_flow_train, X_flow_test, y_flow_train, y_flow_test = train_test_split(
+            X_flow, y_flow, test_size=0.25, random_state=0)
+
+        # Train Support Vector Machine classifier with RBF kernel
+        classifier = SVC(kernel='rbf', random_state=0)
+        flow_model = classifier.fit(X_flow_train, y_flow_train)
+
+        # Predict on test data
+        y_flow_pred = flow_model.predict(X_flow_test)
+
+        print("------------------------------------------------------------------------------")
+
+        # Generate and display confusion matrix
+        print("confusion matrix")
+        cm = confusion_matrix(y_flow_test, y_flow_pred)
+        print(cm)
+
+        # Calculate and display accuracy metrics
+        acc = accuracy_score(y_flow_test, y_flow_pred)
+        print("succes accuracy = {0:.2f} %".format(acc*100))
+        fail = 1.0 - acc
+        print("fail accuracy = {0:.2f} %".format(fail*100))
+        print("------------------------------------------------------------------------------")
+    
+def main():
+    """
+    Main function to execute the SVM training pipeline.
+    Tracks and displays execution time.
+    """
+    start = datetime.now()
+    
+    ml = MachineLearning()
+    ml.flow_training()
+
+    end = datetime.now()
+    print("Training time: ", (end-start)) 
+
+if __name__ == "__main__":
+    main()
